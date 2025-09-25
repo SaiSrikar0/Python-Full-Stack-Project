@@ -68,8 +68,53 @@ def create_task(project_id, title, description, assigned_to, due_date, status):
 def get_tasks_by_project(project_id):
     return db.table("tasks").select("*").eq("project_id", project_id).execute()
 
+def get_all_tasks():
+    return db.table("tasks").select("*").execute()
+
 def update_task(task_id, data: dict):
     return db.table("tasks").update(data).eq("id", task_id).execute()
 
 def delete_task(task_id):
     return db.table("tasks").delete().eq("id", task_id).execute()
+
+# ============ DATABASE MANAGER CLASS ============
+
+class DataBaseManager:
+    def create_user(self, name, email, password_hash, role):
+        return create_user(name, email, password_hash, role)
+    
+    def get_all_users(self):
+        return get_all_users()
+    
+    def update_user(self, user_id, data):
+        return update_user(user_id, data)
+    
+    def delete_user(self, user_id):
+        return delete_user(user_id)
+    
+    def create_project(self, name, description, owner_id, start_date, end_date, status):
+        return create_project(name, description, owner_id, start_date, end_date, status)
+    
+    def get_all_projects(self):
+        return get_all_projects()
+    
+    def update_project(self, project_id, data):
+        return update_project(project_id, data)
+    
+    def delete_project(self, project_id):
+        return delete_project(project_id)
+    
+    def create_task(self, project_id, title, description, assigned_to, due_date, status):
+        return create_task(project_id, title, description, assigned_to, due_date, status)
+    
+    def get_all_tasks(self):
+        return get_all_tasks()
+    
+    def get_tasks_by_project(self, project_id):
+        return get_tasks_by_project(project_id)
+    
+    def update_task(self, task_id, data):
+        return update_task(task_id, data)
+    
+    def delete_task(self, task_id):
+        return delete_task(task_id)
