@@ -1,7 +1,6 @@
-# Project Management System
+# ProjectDock : A Project Management System
 
-A full-stack project management application built with FastAPI backend and Streamlit frontend, integrated with Supabase for data storage.
-
+ProjectDock is a lightweight full-stack application for managing projects, tasks, and team members. It uses FastAPI for the backend API, Streamlit for the frontend interface, and Supabase as the database. Users can create projects, assign tasks, track progress, and collaborate in one simple dashboard.
 ## 🚀 Features
 
 - **Project Management**: Create, update, and track projects
@@ -89,7 +88,8 @@ Project Manager/
         team_members JSONB DEFAULT '[]'::jsonb, -- array of user UUIDs
         status TEXT CHECK (status IN ('pending', 'ongoing', 'completed')) DEFAULT 'pending',
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        description TEXT NULL
     );
 
     CREATE TABLE tasks (
