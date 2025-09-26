@@ -80,6 +80,16 @@ def create_task(task: TaskCreate):
         raise HTTPException(status_code=400, detail=result.get("message"))
     return result
 @app.put("/tasks/{task_id}")
+def update_task(task_id: str, task: dict):
+    '''
+    update a task with new data
+    '''
+    result = task_manager.update_task(task_id, task)
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("message"))
+    return result
+
+@app.put("/tasks/{task_id}/status")
 def update_task_status(task_id: str, task: TaskUpdate):
     '''
     mark it as complete or pending

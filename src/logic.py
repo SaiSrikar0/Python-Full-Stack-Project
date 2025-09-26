@@ -52,6 +52,18 @@ class TaskManager:
             return {"success": True, "message": "task marked as pending"}
         return {"success": False, "message": "error marking task as pending"}
     
+    def update_task(self, task_id, data: dict):
+        '''
+        update a task in the database
+        return the success if task is updated successfully
+        '''
+        if not data:
+            return {"success": False, "message": "No data provided for update"}
+        result = self.db.update_task(task_id, data)
+        if result.data:
+            return {"success": True, "message": "task updated successfully"}
+        return {"success": False, "message": "error updating task"}
+    
     def remove_task(self, task_id):
         '''
         remove a task from the database
