@@ -3,7 +3,7 @@ import requests
 import pandas as pd
 
 # API base URL
-API_URL = "http://localhost:8080"
+API_URL = "http://localhost:8000"
 
 # Set page configuration and dark theme
 st.set_page_config(
