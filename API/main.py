@@ -12,7 +12,7 @@ from src.logic import ProjectManager, TaskManager, UserManager
 
 app = FastAPI(title="Project Management API", version="1.0")
 
-#allow frontend to access the api
+#allow frontend to access api
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # follow all origins (frontend apps)

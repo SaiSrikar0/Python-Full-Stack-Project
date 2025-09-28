@@ -7,7 +7,7 @@ class TaskManager:
     acts as a bridge between frontend(Streamlit/FastAPI) and database
     '''
     def __init__(self):
-        #create an instance of the database manager (this will handle all db operations)
+        #creates an instance of the database manager (this will handle all db operations)
         self.db = DataBaseManager()
 
     #create a new task

@@ -130,7 +130,7 @@ if page == "Projects":
             st.dataframe(df, use_container_width=True)
             
             # Project Management Actions
-            st.subheader("Manage Projects")
+            st.subheader("Manages Projects")
             if projects:
                 project_to_manage = st.selectbox(
                     "Select Project to Edit/Delete:",

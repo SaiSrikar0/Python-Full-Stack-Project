@@ -157,7 +157,223 @@ To contribute to this project:
 4. Push to the branch: `git push origin feature-name`
 5. Submit a pull request
 
-## Common errors and fixes
+## 🚨 Common Errors and Fixes
+
+This section covers common issues encountered during development and their solutions:
+
+### 1. **JSON Decode Errors**
+**Error:** `requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)`
+
+**Cause:** API server not running or returning non-JSON responses
+
+**Fix:**
+```bash
+# Ensure the FastAPI server is running
+cd API
+uvicorn main:app --host 0.0.0.0 --port 8080
+```
+
+**Code Fix in Frontend:**
+```python
+# Enhanced error handling in app.py
+def handle_response(response, success_message):
+    if response.status_code == 200:
+        try:
+            result = response.json()
+            if result.get("success"):
+                st.success(success_message)
+                return result.get("data", [])
+            else:
+                st.error(f"Error: {result.get('message', 'Unknown error')}")
+                return []
+        except ValueError:
+            st.error("Error: Invalid response from server")
+            return []
+```
+
+### 2. **CORS Policy Errors**
+**Error:** `Access to fetch at 'http://localhost:8080' from origin 'http://localhost:8501' has been blocked by CORS policy`
+
+**Cause:** Frontend and backend running on different ports without proper CORS configuration
+
+**Fix:** Add CORS middleware in `main.py`:
+```python
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, specify exact origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+```
+
+### 3. **Supabase Connection Issues**
+**Error:** `supabase.exceptions.APIError: Invalid API key`
+
+**Cause:** Missing or incorrect environment variables
+
+**Fix:**
+1. Create `.env` file in root directory:
+```bash
+SUPABASE_URL=your_actual_supabase_url
+SUPABASE_KEY=your_actual_supabase_anon_key
+```
+
+2. Verify environment loading in `db.py`:
+```python
+from dotenv import load_dotenv
+load_dotenv()
+
+url = os.getenv("SUPABASE_URL")
+key = os.getenv("SUPABASE_KEY")
+
+if not url or not key:
+    raise ValueError("Missing SUPABASE_URL or SUPABASE_KEY in environment variables")
+```
+
+### 4. **UUID Validation Errors**
+**Error:** `pydantic.ValidationError: invalid input syntax for type uuid`
+
+**Cause:** Manually entered UUIDs in forms causing validation issues
+
+**Fix:** Replace manual UUID inputs with dropdown selections:
+```python
+# Instead of text input for UUIDs
+# owner_id = st.text_input("Owner ID (UUID)")
+
+# Use dropdown with user-friendly display
+if available_users:
+    owner_option = st.selectbox(
+        "Project Owner", 
+        options=[user[0] for user in available_users],
+        format_func=lambda x: next(user[1] for user in available_users if user[0] == x)
+    )
+```
+
+### 5. **Port Conflicts**
+**Error:** `OSError: [WinError 10048] Only one usage of each socket address is normally permitted`
+
+**Cause:** Port already in use by another process
+
+**Fix:**
+```bash
+# Check what's using the port
+netstat -ano | findstr :8080
+
+# Kill the process (replace PID with actual process ID)
+taskkill /PID 12345 /F
+
+# Or use different ports
+uvicorn main:app --host 0.0.0.0 --port 8000  # Backend
+streamlit run app.py --server.port 8501      # Frontend
+```
+
+### 6. **Module Import Errors**
+**Error:** `ModuleNotFoundError: No module named 'src'`
+
+**Cause:** Python path not properly configured for relative imports
+
+**Fix:** Add path configuration in API files:
+```python
+import sys, os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from src.logic import ProjectManager, TaskManager, UserManager
+```
+
+### 7. **Database Table Not Found**
+**Error:** `supabase.exceptions.APIError: relation "projects" does not exist`
+
+**Cause:** Database tables not created in Supabase
+
+**Fix:** Run the table creation SQL in Supabase SQL Editor:
+```sql
+-- Copy and execute the complete SQL from the README setup section
+CREATE TABLE users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    -- ... rest of the schema
+);
+```
+
+### 8. **Streamlit Dark Theme Issues**
+**Error:** Text not visible in dark theme or inconsistent styling
+
+**Fix:** Apply comprehensive CSS styling:
+```python
+st.markdown("""
+<style>
+.stApp {
+    background-color: #1E1E1E;
+    color: #FFFFFF;
+}
+h1, h2, h3, h4, h5, h6 {
+    color: #FF4B4B !important;
+}
+.stTextInput>div>div>input {
+    background-color: #252526;
+    color: white !important;
+    border: 1px solid #FF4B4B;
+}
+</style>
+""", unsafe_allow_html=True)
+```
+
+### 9. **Terminal Navigation Issues**
+**Error:** Commands failing due to incorrect working directory
+
+**Fix:** Always use absolute paths or proper directory changes:
+```bash
+# Use full path navigation
+cd "C:\Users\username\OneDrive\Desktop\Project Manager\API"
+
+# Or use relative navigation step by step
+cd "Project Manager"
+cd API
+```
+
+### 10. **Package Installation Issues**
+**Error:** `pip: command not found` or package conflicts
+
+**Fix:**
+```bash
+# Update pip first
+python -m pip install --upgrade pip
+
+# Install from requirements.txt
+pip install -r requirements.txt
+
+# If conflicts occur, create virtual environment
+python -m venv project_env
+project_env\Scripts\activate  # Windows
+pip install -r requirements.txt
+```
+
+### 🔧 **Debugging Tips**
+
+1. **Check Server Status:**
+   ```bash
+   # Test API directly
+   curl http://localhost:8080/
+   # Or in PowerShell
+   Invoke-RestMethod -Uri "http://localhost:8080/" -Method GET
+   ```
+
+2. **Monitor Logs:**
+   - Backend: Check uvicorn console output
+   - Frontend: Check streamlit console output
+   - Database: Check Supabase dashboard logs
+
+3. **Environment Verification:**
+   ```python
+   # Test database connection
+   python -c "from src.db import DataBaseManager; db = DataBaseManager(); print('Connection:', db.get_all_users())"
+   ```
+
+4. **Browser Developer Tools:**
+   - Check Network tab for API call failures
+   - Check Console for JavaScript errors
+   - Verify CORS headers in Response headers
 
 
 ## � Future Enhancements
@@ -210,4 +426,3 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 If you have any questions or issues, please open an issue on GitHub or contact the development team.
 Mail : bsaisrikar05@gmail.com
-
