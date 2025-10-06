@@ -1,9 +1,17 @@
 import streamlit as st
 import requests
 import pandas as pd
+import os
 
-# API base URL
-API_URL = "http://localhost:8080"
+# API base URL - Use environment variable for deployment flexibility
+API_URL = os.getenv("API_URL", "http://localhost:8000")
+
+# Alternative: Use Streamlit secrets for deployment
+try:
+    API_URL = st.secrets["general"]["API_URL"]
+except (KeyError, FileNotFoundError):
+    # Fallback to environment variable or localhost
+    API_URL = os.getenv("API_URL", "http://localhost:8000")
 
 # Set page configuration and dark theme
 st.set_page_config(
@@ -76,6 +84,46 @@ st.sidebar.markdown("✏️ **Edit** existing records")
 st.sidebar.markdown("🗑️ **Delete** records")
 st.sidebar.markdown("🎨 **Dark Theme** UI")
 
+# Add connection status check
+def check_api_connection():
+    """Check if the API is accessible"""
+    try:
+        response = requests.get(f"{API_URL}/", timeout=5)
+        return response.status_code == 200
+    except requests.exceptions.RequestException:
+        return False
+
+def safe_api_request(url, method="GET", json_data=None, timeout=5):
+    """Make API request with error handling"""
+    try:
+        if method == "GET":
+            response = requests.get(url, timeout=timeout)
+        elif method == "POST":
+            response = requests.post(url, json=json_data, timeout=timeout)
+        elif method == "PUT":
+            response = requests.put(url, json=json_data, timeout=timeout)
+        elif method == "DELETE":
+            response = requests.delete(url, timeout=timeout)
+        else:
+            return None
+        
+        return response
+    except requests.exceptions.RequestException as e:
+        st.error(f"❌ Could not connect to API: {API_URL}")
+        st.info("💡 The backend API is not available. Please check if it's deployed and running.")
+        return None
+
+# Display API connection status
+st.sidebar.markdown("---")
+st.sidebar.markdown("### 🌐 API Status")
+if check_api_connection():
+    st.sidebar.success("🟢 Connected")
+    st.sidebar.caption(f"URL: {API_URL}")
+else:
+    st.sidebar.error("🔴 Not Connected")
+    st.sidebar.caption(f"URL: {API_URL}")
+    st.sidebar.warning("Deploy your backend API to enable full functionality")
+
 # --- Helper Functions for API calls ---
 def handle_response(response, success_message):
     if response.status_code == 200:
@@ -103,8 +151,8 @@ if page == "Projects":
     st.header("Projects")
     
     # Quick stats
-    projects_response = requests.get(f"{API_URL}/projects")
-    if projects_response.status_code == 200:
+    projects_response = safe_api_request(f"{API_URL}/projects")
+    if projects_response and projects_response.status_code == 200:
         projects_data = projects_response.json().get("data", [])
         col1, col2, col3, col4 = st.columns(4)
         with col1:
@@ -119,11 +167,24 @@ if page == "Projects":
             completed_count = len([p for p in projects_data if p.get("status") == "completed"])
             st.metric("Completed", completed_count)
         st.markdown("---")
+    else:
+        # Show placeholder metrics when API is not available
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.metric("Total Projects", "—")
+        with col2:
+            st.metric("Pending", "—")
+        with col3:
+            st.metric("Ongoing", "—")
+        with col4:
+            st.metric("Completed", "—")
+        st.markdown("---")
+        st.warning("📊 **API Connection Required** - Deploy your backend to view real project data")
 
     # Fetch and display projects
     st.subheader("All Projects")
-    projects_response = requests.get(f"{API_URL}/projects")
-    if projects_response.status_code == 200:
+    projects_response = safe_api_request(f"{API_URL}/projects")
+    if projects_response and projects_response.status_code == 200:
         projects = projects_response.json().get("data", [])
         if projects:
             df = pd.DataFrame(projects)
@@ -226,15 +287,32 @@ if page == "Projects":
         else:
             st.info("No projects found.")
     else:
-        st.error("Could not fetch projects.")
+        # API not available - show helpful message
+        st.info("🚀 **Welcome to ProjectDock!**")
+        st.markdown("""
+        **To view and manage projects:**
+        1. Deploy your FastAPI backend
+        2. Update the API_URL in your Streamlit Cloud app secrets
+        3. Or run locally with both frontend and backend
+        
+        **Current API URL:** `{}`
+        """.format(API_URL))
+        
+        st.markdown("---")
+        st.subheader("📋 Sample Project Structure")
+        sample_df = pd.DataFrame([
+            {"Name": "ProjectDock Development", "Status": "ongoing", "Owner": "Developer", "Start Date": "2025-09-01"},
+            {"Name": "Mobile App Design", "Status": "pending", "Owner": "Designer", "Start Date": "2025-10-01"}
+        ])
+        st.dataframe(sample_df, use_container_width=True)
 
     # Create a new project
     st.subheader("Create New Project")
     
     # Fetch available users for the dropdown
-    users_response = requests.get(f"{API_URL}/users")
+    users_response = safe_api_request(f"{API_URL}/users")
     available_users = []
-    if users_response.status_code == 200:
+    if users_response and users_response.status_code == 200:
         users_data = users_response.json().get("data", [])
         available_users = [(user["id"], f"{user['name']} ({user['email']})") for user in users_data]
     
@@ -249,9 +327,12 @@ if page == "Projects":
                 format_func=lambda x: next(user[1] for user in available_users if user[0] == x)
             )
             owner_id = owner_option
-        else:
+        elif users_response:  # API responded but no users found
             st.warning("No users found. Please create a user first.")
             owner_id = st.text_input("Owner ID (UUID)")
+        else:  # API not available
+            st.info("💡 **Backend API Required** - Create forms will be enabled when your API is deployed.")
+            owner_id = st.text_input("Owner ID (UUID)", disabled=True, help="Deploy backend API to enable this feature")
             
         start_date = st.date_input("Start Date")
         end_date = st.date_input("End Date")
@@ -267,8 +348,15 @@ if page == "Projects":
                 "end_date": str(end_date),
                 "status": status,
             }
-            response = requests.post(f"{API_URL}/projects", json=project_data)
-            handle_response(response, "Project created successfully!")
+            if check_api_connection():
+                response = safe_api_request(f"{API_URL}/projects", method="POST", json_data=project_data)
+                if response:
+                    handle_response(response, "Project created successfully!")
+                else:
+                    st.error("Failed to create project - API not available")
+            else:
+                st.error("❌ Cannot create project - Backend API is not available")
+                st.info("💡 Deploy your FastAPI backend to enable project creation")
         elif submitted:
             st.error("Please fill in all required fields.")
 
