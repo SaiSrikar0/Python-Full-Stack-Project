@@ -4,14 +4,14 @@ import pandas as pd
 import os
 
 # API base URL - Use environment variable for deployment flexibility
-API_URL = os.getenv("API_URL", "http://localhost:8000")
+API_URL = os.getenv("API_URL", "https://projectdock-api.onrender.com/")
 
 # Alternative: Use Streamlit secrets for deployment
 try:
     API_URL = st.secrets["general"]["API_URL"]
 except (KeyError, FileNotFoundError):
     # Fallback to environment variable or localhost
-    API_URL = os.getenv("API_URL", "http://localhost:8000")
+    API_URL = os.getenv("API_URL", "https://projectdock-api.onrender.com/")
 
 # Set page configuration and dark theme
 st.set_page_config(
