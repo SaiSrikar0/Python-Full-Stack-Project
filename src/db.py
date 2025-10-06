@@ -5,13 +5,27 @@ from supabase import create_client
 from dotenv import load_dotenv
 
 # loading environment variables from .env file
-
 load_dotenv()
 
 url = os.getenv("SUPABASE_URL")
 key = os.getenv("SUPABASE_KEY")
 
-db = create_client(url, key)
+# Validate environment variables
+if not url or not key:
+    raise ValueError(f"Missing Supabase credentials. URL: {'✓' if url else '✗'}, KEY: {'✓' if key else '✗'}")
+
+# Remove any quotes that might be in the environment variables
+url = url.strip('"\'')
+key = key.strip('"\'')
+
+print(f"Connecting to Supabase: {url[:50]}...")  # Debug info
+
+try:
+    db = create_client(url, key)
+    print("✅ Supabase connection established")
+except Exception as e:
+    print(f"❌ Failed to connect to Supabase: {e}")
+    raise
 
 # ============ USER MANAGEMENT ============
 
