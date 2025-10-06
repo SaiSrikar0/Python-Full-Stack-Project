@@ -5,47 +5,13 @@ from supabase import create_client
 from dotenv import load_dotenv
 
 # loading environment variables from .env file
+
 load_dotenv()
 
-# Get environment variables with multiple fallback methods
-url = os.getenv("SUPABASE_URL") or os.environ.get("SUPABASE_URL")
-key = os.getenv("SUPABASE_KEY") or os.environ.get("SUPABASE_KEY")
+url = os.getenv("SUPABASE_URL")
+key = os.getenv("SUPABASE_KEY")
 
-# Debug: Print what we actually got (first 50 chars for security)
-print(f"Raw URL from env: {url}")
-print(f"Raw KEY from env: {key[:50] if key else 'None'}...")
-
-# Validate environment variables
-if not url or not key:
-    print("❌ Missing Supabase credentials!")
-    print(f"SUPABASE_URL: {'✓' if url else '✗'}")
-    print(f"SUPABASE_KEY: {'✓' if key else '✗'}")
-    print("Available env vars:", [k for k in os.environ.keys() if 'SUPABASE' in k])
-    raise ValueError("Missing Supabase credentials")
-
-# Remove any quotes that might be in the environment variables
-url = url.strip('"\'').strip()
-key = key.strip('"\'').strip()
-
-# Additional validation
-if not url.startswith('https://'):
-    print(f"❌ Invalid URL format: {url}")
-    raise ValueError(f"SUPABASE_URL must start with https://")
-
-if len(key) < 100:  # JWT tokens are typically longer
-    print(f"❌ Invalid key format (too short): {len(key)} characters")
-    raise ValueError("SUPABASE_KEY appears to be invalid")
-
-print(f"✅ Connecting to Supabase: {url}")
-
-try:
-    db = create_client(url, key)
-    print("✅ Supabase connection established successfully")
-except Exception as e:
-    print(f"❌ Failed to connect to Supabase: {e}")
-    print(f"URL used: {url}")
-    print(f"Key length: {len(key)}")
-    raise
+db = create_client(url, key)
 
 # ============ USER MANAGEMENT ============
 
