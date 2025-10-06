@@ -6,9 +6,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import sys, os
 
-#import taskmanager from src/logic.py
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from src.logic import ProjectManager, TaskManager, UserManager
+# Import taskmanager from src/logic.py - Updated for deployment
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+try:
+    from src.logic import ProjectManager, TaskManager, UserManager
+except ImportError:
+    # Fallback for deployment environments
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from src.logic import ProjectManager, TaskManager, UserManager
 
 app = FastAPI(title="Project Management API", version="1.0")
 
@@ -63,7 +68,11 @@ def home():
     '''
     check if the api is running
     '''
-    return {"message": "Welcome to the Project Management API"}
+    return {
+        "message": "Welcome to the Project Management API", 
+        "status": "running",
+        "docs": "/docs"
+    }
 @app.get("/tasks")
 def get_tasks():
     '''
